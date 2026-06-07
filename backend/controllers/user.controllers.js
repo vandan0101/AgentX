@@ -94,8 +94,16 @@ export const askToAssistant=async (req,res)=>{
       case 'general':
       case  "calculator-open":
       case "instagram-open": 
-       case "facebook-open": 
-       case "weather-show" :
+       case "facebook-open":
+       case "weather-show":
+       case "whatsapp-open":
+       case "github-open":
+       case "linkedin-open":
+       case "gmail-open":
+       case "news-show":
+       case "amazon-search":
+       case "translate-search":
+       case "maps-search":
          return res.json({
             type,
             userInput:gemResult.userInput,

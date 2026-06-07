@@ -74,6 +74,10 @@ synth.speak(utterence);
       const query = encodeURIComponent(userInput);
       window.open(`https://www.google.com/search?q=${query}`, '_blank');
     }
+    if (type === 'maps-search') {
+      const query = encodeURIComponent(userInput || "near me");
+      window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+    }
      if (type === 'calculator-open') {
   
       window.open(`https://www.google.com/search?q=calculator`, '_blank');
@@ -84,8 +88,31 @@ synth.speak(utterence);
     if (type ==="facebook-open") {
       window.open(`https://www.facebook.com/`, '_blank');
     }
+    if (type ==="whatsapp-open") {
+      window.open(`https://web.whatsapp.com/`, '_blank');
+    }
+    if (type ==="github-open") {
+      window.open(`https://github.com/`, '_blank');
+    }
+    if (type ==="linkedin-open") {
+      window.open(`https://www.linkedin.com/`, '_blank');
+    }
+    if (type ==="gmail-open") {
+      window.open(`https://mail.google.com/`, '_blank');
+    }
      if (type ==="weather-show") {
       window.open(`https://www.google.com/search?q=weather`, '_blank');
+    }
+    if (type ==="news-show") {
+      window.open(`https://news.google.com/`, '_blank');
+    }
+    if (type ==="amazon-search") {
+      const query = encodeURIComponent(userInput);
+      window.open(`https://www.amazon.in/s?k=${query}`, '_blank');
+    }
+    if (type ==="translate-search") {
+      const query = encodeURIComponent(userInput);
+      window.open(`https://translate.google.com/?sl=auto&tl=en&text=${query}&op=translate`, '_blank');
     }
 
     if (type === 'youtube-search' || type === 'youtube-play') {
@@ -207,8 +234,8 @@ useEffect(() => {
 <h1 className='text-white font-semibold text-[19px]'>History</h1>
 
 <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
-  {userData.history?.map((his)=>(
-    <div className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
+  {userData.history?.map((his,index)=>(
+    <div key={`${his}-${index}`} className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
   ))}
 
 </div>

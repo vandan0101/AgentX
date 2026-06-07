@@ -8,12 +8,46 @@ const normalizeUserInput = (command, assistantName) => {
 const inferFallbackIntent = (command, assistantName) => {
   const userInput = normalizeUserInput(command, assistantName)
   const lowerInput = userInput.toLowerCase()
+  const hasAnyWord = (variants) => variants.some((variant) => lowerInput.includes(variant))
   const cleanSearchInput = (value, platform) =>
     value
       .replace(/^(search|play)\s+/i, "")
       .replace(new RegExp(`\\bon\\s+${platform}\\b`, "gi"), "")
       .replace(new RegExp(`\\b${platform}\\b`, "gi"), "")
       .trim() || value
+  const cleanActionInput = (value, keyword) =>
+    value
+      .replace(new RegExp(`^(open|search|find|play)\\s+`, "i"), "")
+      .replace(new RegExp(`\\b${keyword}\\b`, "gi"), "")
+      .trim() || value
+  const cleanLooseQuery = (value) =>
+    value
+      .replace(/\bon\b\s*$/i, "")
+      .replace(/\bfor\b\s*$/i, "")
+      .replace(/^for\s+/i, "")
+      .trim() || value
+
+  if (
+    hasAnyWord([
+      "bluetooth",
+      "wifi",
+      "wi-fi",
+      "hotspot",
+      "airplane mode",
+      "brightness",
+      "volume",
+      "sound setting",
+      "system setting",
+      "pc setting",
+      "laptop setting",
+    ])
+  ) {
+    return {
+      type: "general",
+      userInput,
+      response: "no",
+    }
+  }
 
   if (lowerInput.includes("weather")) {
     return {
@@ -31,7 +65,7 @@ const inferFallbackIntent = (command, assistantName) => {
     }
   }
 
-  if (lowerInput.includes("instagram")) {
+  if (hasAnyWord(["instagram", "insta"])) {
     return {
       type: "instagram-open",
       userInput,
@@ -39,11 +73,75 @@ const inferFallbackIntent = (command, assistantName) => {
     }
   }
 
-  if (lowerInput.includes("facebook")) {
+  if (hasAnyWord(["facebook", "fb"])) {
     return {
       type: "facebook-open",
       userInput,
       response: "opening facebook",
+    }
+  }
+
+  if (hasAnyWord(["whatsapp", "whats app", "whatsup"])) {
+    return {
+      type: "whatsapp-open",
+      userInput,
+      response: "opening whatsapp",
+    }
+  }
+
+  if (hasAnyWord(["github", "git hub", "gitub", "gitab", "githab", "guitar"])) {
+    return {
+      type: "github-open",
+      userInput,
+      response: "opening github",
+    }
+  }
+
+  if (hasAnyWord(["linkedin", "linked in", "linkdin"])) {
+    return {
+      type: "linkedin-open",
+      userInput,
+      response: "opening linkedin",
+    }
+  }
+
+  if (lowerInput.includes("gmail") || lowerInput.includes("mail")) {
+    return {
+      type: "gmail-open",
+      userInput,
+      response: "opening gmail",
+    }
+  }
+
+  if (lowerInput.includes("news")) {
+    return {
+      type: "news-show",
+      userInput,
+      response: "opening news",
+    }
+  }
+
+  if (lowerInput.includes("amazon")) {
+    return {
+      type: "amazon-search",
+      userInput: cleanLooseQuery(cleanActionInput(userInput, "amazon")),
+      response: "searching on amazon",
+    }
+  }
+
+  if (lowerInput.includes("translate")) {
+    return {
+      type: "translate-search",
+      userInput: cleanActionInput(userInput, "translate"),
+      response: "opening translate",
+    }
+  }
+
+  if (lowerInput.includes("map") || lowerInput.includes("direction") || lowerInput.includes("location")) {
+    return {
+      type: "maps-search",
+      userInput: cleanLooseQuery(cleanActionInput(userInput, "maps?")),
+      response: "opening maps",
     }
   }
 
@@ -118,7 +216,7 @@ You are not Google. You will now behave like a voice-enabled assistant.
 Your task is to understand the user's natural language input and respond with a JSON object like this:
 
 {
-  "type": "general" | "google-search" | "youtube-search" | "youtube-play" | "get-time" | "get-date" | "get-day" | "get-month"|"calculator-open" | "instagram-open" |"facebook-open" |"weather-show"
+  "type": "general" | "google-search" | "youtube-search" | "youtube-play" | "get-time" | "get-date" | "get-day" | "get-month"|"calculator-open" | "instagram-open" |"facebook-open" |"weather-show" | "whatsapp-open" | "github-open" | "linkedin-open" | "gmail-open" | "news-show" | "amazon-search" | "translate-search" | "maps-search"
   ,
   "userInput": "<original user input>" {only remove your name from userinput if exists} and agar kisi ne google ya youtube pe kuch search karne ko bola hai to userInput me only bo search baala text jaye,
 
@@ -139,6 +237,14 @@ Type meanings:
 - "instagram-open": if user wants to  open instagram .
 - "facebook-open": if user wants to open facebook.
 -"weather-show": if user wants to know weather
+- "whatsapp-open": if user wants to open whatsapp.
+- "github-open": if user wants to open github.
+- "linkedin-open": if user wants to open linkedin.
+- "gmail-open": if user wants to open gmail or mail.
+- "news-show": if user wants latest news.
+- "amazon-search": if user wants to search a product on amazon.
+- "translate-search": if user wants to translate a word or sentence.
+- "maps-search": if user wants maps, directions, or a location search.
 - "get-time": if user asks for current time.
 - "get-date": if user asks for today's date.
 - "get-day": if user asks what day it is.
@@ -146,6 +252,7 @@ Type meanings:
 
 Important:
 - Use ${userName} agar koi puche tume kisne banaya 
+- If the user asks to control local PC features like bluetooth, wifi, hotspot, brightness, volume, or system settings, respond with only JSON and keep "response" as either "yes" or "no". If you cannot do it from this app, respond "no".
 - Only respond with the JSON object, nothing else.
 
 
