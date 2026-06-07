@@ -2,6 +2,7 @@
 import geminiResponse from "../gemini.js"
 import User from "../models/user.model.js"
 import moment from "moment"
+import { isSystemActionType, runSystemAction } from "../utils/systemActions.js"
  export const getCurrentUser=async (req,res)=>{
     try {
         const userId=req.userId
@@ -62,6 +63,15 @@ export const askToAssistant=async (req,res)=>{
       const gemResult=JSON.parse(jsonMatch[0])
       console.log(gemResult)
       const type=gemResult.type
+
+      if (isSystemActionType(type)) {
+         const actionResult = await runSystemAction(type)
+         return res.json({
+            type,
+            userInput:gemResult.userInput,
+            response:actionResult.response,
+         })
+      }
 
       switch(type){
          case 'get-date' :

@@ -15,6 +15,7 @@ function Home() {
   const isSpeakingRef=useRef(false)
   const recognitionRef=useRef(null)
   const [ham,setHam]=useState(false)
+  const [showDesktopHistory,setShowDesktopHistory]=useState(false)
   const isRecognizingRef=useRef(false)
   const synth=window.speechSynthesis
 
@@ -67,6 +68,9 @@ synth.speak(utterence);
   }
 
   const handleCommand=(data)=>{
+    if (!data) {
+      return;
+    }
     const {type,userInput,response}=data
       speak(response);
     
@@ -123,6 +127,10 @@ synth.speak(utterence);
   }
 
 useEffect(() => {
+  if (!userData?.assistantName || !userData?.name) {
+    return;
+  }
+
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = new SpeechRecognition();
 
@@ -197,6 +205,10 @@ useEffect(() => {
       isRecognizingRef.current = false;
       setListening(false);
       const data = await getGeminiResponse(transcript);
+      if (!data) {
+        setUserText("");
+        return;
+      }
       handleCommand(data);
       setAiText(data.response);
       setUserText("");
@@ -217,7 +229,7 @@ useEffect(() => {
     setListening(false);
     isRecognizingRef.current = false;
   };
-}, []);
+}, [userData, getGeminiResponse]);
 
 
 
@@ -241,8 +253,28 @@ useEffect(() => {
 </div>
 
       </div>
-      <button className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold absolute hidden lg:block top-[20px] right-[20px]  bg-white rounded-full cursor-pointer text-[19px] ' onClick={handleLogOut}>Log Out</button>
-      <button className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold  bg-white absolute top-[100px] right-[20px] rounded-full cursor-pointer text-[19px] px-[20px] py-[10px] hidden lg:block ' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+      <button className='min-w-[150px] h-[60px] text-black font-semibold absolute hidden lg:block top-[30px] right-[30px] bg-white rounded-full cursor-pointer text-[19px] ' onClick={handleLogOut}>Log Out</button>
+      <button className='min-w-[150px] h-[60px] text-black font-semibold  bg-white absolute top-[120px] right-[30px] rounded-full cursor-pointer text-[19px] px-[20px] py-[10px] hidden lg:block ' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+      <button className='min-w-[150px] h-[50px] text-black font-semibold bg-white absolute top-[210px] right-[30px] rounded-full cursor-pointer text-[18px] px-[20px] py-[10px] hidden lg:block' onClick={()=>setShowDesktopHistory((prev)=>!prev)}>
+        {showDesktopHistory ? "Hide History" : "History"}
+      </button>
+      {showDesktopHistory && (
+        <div className='hidden lg:flex absolute top-[280px] right-[30px] w-[300px] h-[300px] bg-[#00000053] backdrop-blur-lg rounded-2xl p-[16px] flex-col gap-[12px]'>
+          <h1 className='text-white font-semibold text-[19px]'>History</h1>
+          <div className='w-full h-[2px] bg-gray-400'></div>
+          <div className='w-full flex-1 gap-[12px] overflow-y-auto flex flex-col'>
+            {userData?.history?.length ? (
+              userData.history.map((his, index) => (
+                <div key={`${his}-${index}`} className='text-gray-200 text-[16px] w-full min-h-[28px] break-words'>
+                  {his}
+                </div>
+              ))
+            ) : (
+              <p className='text-gray-300 text-[15px]'>No history yet</p>
+            )}
+          </div>
+        </div>
+      )}
       <div className='w-[300px] h-[400px] flex justify-center items-center overflow-hidden rounded-4xl shadow-lg'>
 <img src={userData?.assistantImage} alt="" className='h-full object-cover'/>
       </div>

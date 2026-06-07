@@ -9,6 +9,38 @@ const inferFallbackIntent = (command, assistantName) => {
   const userInput = normalizeUserInput(command, assistantName)
   const lowerInput = userInput.toLowerCase()
   const hasAnyWord = (variants) => variants.some((variant) => lowerInput.includes(variant))
+  const normalizedVoiceInput = lowerInput
+    .replace(/\bwi fi\b/g, "wifi")
+    .replace(/\bwi-fi\b/g, "wifi")
+    .replace(/\bblue tooth\b/g, "bluetooth")
+    .replace(/\bun mute\b/g, "unmute")
+    .replace(/\bunnute\b/g, "unmute")
+    .replace(/\bturn of\b/g, "turn off")
+    .replace(/\bswitch of\b/g, "switch off")
+    .replace(/\bshut of\b/g, "shut off")
+  const hasTurnOnIntent =
+    /\b(turn|switch)\b[\w\s-]*\bon\b/i.test(normalizedVoiceInput) ||
+    /\b(enable|start)\b/i.test(normalizedVoiceInput)
+  const hasTurnOffIntent =
+    /\b(turn|switch|shut)\b[\w\s-]*\bof?f?\b/i.test(normalizedVoiceInput) ||
+    /\b(disable|stop)\b/i.test(normalizedVoiceInput)
+  const hasIncreaseIntent =
+    /\b(increase|raise|up|louder|higher|more)\b/i.test(normalizedVoiceInput) ||
+    /\bturn\s+up\b/i.test(normalizedVoiceInput)
+  const hasDecreaseIntent =
+    /\b(decrease|lower|down|softer|less)\b/i.test(normalizedVoiceInput) ||
+    /\bturn\s+down\b/i.test(normalizedVoiceInput)
+  const hasMaxIntent = /\b(max|maximize|full|highest|100)\b/i.test(normalizedVoiceInput)
+  const hasMinIntent = /\b(min|minimum|lowest|zero|0)\b/i.test(normalizedVoiceInput)
+  const hasUnmuteIntent =
+    /\bunmute\b/i.test(normalizedVoiceInput) ||
+    (/\b(turn|switch)\b[\w\s-]*\bon\b/i.test(normalizedVoiceInput) &&
+      hasAnyWord(["sound", "volume", "speaker", "audio"]))
+  const hasMuteIntent =
+    /\bmute\b/i.test(normalizedVoiceInput) ||
+    (/\b(turn|switch|shut)\b[\w\s-]*\boff\b/i.test(normalizedVoiceInput) &&
+      hasAnyWord(["sound", "volume", "speaker", "audio"])) ||
+    /\bsilent\b/i.test(normalizedVoiceInput)
   const cleanSearchInput = (value, platform) =>
     value
       .replace(/^(search|play)\s+/i, "")
@@ -27,25 +59,171 @@ const inferFallbackIntent = (command, assistantName) => {
       .replace(/^for\s+/i, "")
       .trim() || value
 
-  if (
-    hasAnyWord([
-      "bluetooth",
-      "wifi",
-      "wi-fi",
-      "hotspot",
-      "airplane mode",
-      "brightness",
-      "volume",
-      "sound setting",
-      "system setting",
-      "pc setting",
-      "laptop setting",
-    ])
-  ) {
+  if (hasAnyWord(["bluetooth", "blue tooth"])) {
+    if (hasTurnOnIntent) {
+      return {
+        type: "bluetooth-on",
+        userInput,
+        response: "turning bluetooth on",
+      }
+    }
+
+    if (hasTurnOffIntent) {
+      return {
+        type: "bluetooth-off",
+        userInput,
+        response: "turning bluetooth off",
+      }
+    }
+
     return {
-      type: "general",
+      type: "bluetooth-open",
       userInput,
-      response: "no",
+      response: "opening bluetooth settings",
+    }
+  }
+
+  if (hasAnyWord(["wifi", "wi-fi", "wi fi"])) {
+    if (hasTurnOnIntent) {
+      return {
+        type: "wifi-on",
+        userInput,
+        response: "turning wifi on",
+      }
+    }
+
+    if (hasTurnOffIntent) {
+      return {
+        type: "wifi-off",
+        userInput,
+        response: "turning wifi off",
+      }
+    }
+
+    return {
+      type: "wifi-open",
+      userInput,
+      response: "opening wifi settings",
+    }
+  }
+
+  if (hasUnmuteIntent) {
+    return {
+      type: "volume-unmute",
+      userInput,
+      response: "unmuting volume",
+    }
+  }
+
+  if (hasMuteIntent) {
+    return {
+      type: "volume-mute",
+      userInput,
+      response: "muting volume",
+    }
+  }
+
+  if (hasAnyWord(["volume", "sound setting", "sound settings", "speaker setting"])) {
+    if (hasMuteIntent) {
+      return {
+        type: "volume-mute",
+        userInput,
+        response: "muting volume",
+      }
+    }
+
+    if (hasUnmuteIntent) {
+      return {
+        type: "volume-unmute",
+        userInput,
+        response: "unmuting volume",
+      }
+    }
+
+    if (hasMaxIntent) {
+      return {
+        type: "volume-max",
+        userInput,
+        response: "setting volume to maximum",
+      }
+    }
+
+    if (hasMinIntent) {
+      return {
+        type: "volume-min",
+        userInput,
+        response: "setting volume to minimum",
+      }
+    }
+
+    if (hasIncreaseIntent || hasTurnOnIntent) {
+      return {
+        type: "volume-up",
+        userInput,
+        response: "increasing volume",
+      }
+    }
+
+    if (hasDecreaseIntent || hasTurnOffIntent) {
+      return {
+        type: "volume-down",
+        userInput,
+        response: "decreasing volume",
+      }
+    }
+
+    return {
+      type: "volume-settings-open",
+      userInput,
+      response: "opening sound settings",
+    }
+  }
+
+  if (hasAnyWord(["brightness", "display setting", "display settings", "screen setting"])) {
+    if (hasMaxIntent) {
+      return {
+        type: "brightness-max",
+        userInput,
+        response: "setting brightness to maximum",
+      }
+    }
+
+    if (hasMinIntent) {
+      return {
+        type: "brightness-min",
+        userInput,
+        response: "setting brightness to minimum",
+      }
+    }
+
+    if (hasIncreaseIntent || hasTurnOnIntent) {
+      return {
+        type: "brightness-up",
+        userInput,
+        response: "increasing brightness",
+      }
+    }
+
+    if (hasDecreaseIntent || hasTurnOffIntent) {
+      return {
+        type: "brightness-down",
+        userInput,
+        response: "decreasing brightness",
+      }
+    }
+
+    return {
+      type: "display-settings-open",
+      userInput,
+      response: "opening display settings",
+    }
+  }
+
+  if (hasAnyWord(["system setting", "system settings", "pc setting", "pc settings", "laptop setting", "settings"])) {
+    return {
+      type: "settings-open",
+      userInput,
+      response: "opening system settings",
     }
   }
 
@@ -216,7 +394,7 @@ You are not Google. You will now behave like a voice-enabled assistant.
 Your task is to understand the user's natural language input and respond with a JSON object like this:
 
 {
-  "type": "general" | "google-search" | "youtube-search" | "youtube-play" | "get-time" | "get-date" | "get-day" | "get-month"|"calculator-open" | "instagram-open" |"facebook-open" |"weather-show" | "whatsapp-open" | "github-open" | "linkedin-open" | "gmail-open" | "news-show" | "amazon-search" | "translate-search" | "maps-search"
+  "type": "general" | "google-search" | "youtube-search" | "youtube-play" | "get-time" | "get-date" | "get-day" | "get-month"|"calculator-open" | "instagram-open" |"facebook-open" |"weather-show" | "whatsapp-open" | "github-open" | "linkedin-open" | "gmail-open" | "news-show" | "amazon-search" | "translate-search" | "maps-search" | "bluetooth-open" | "bluetooth-on" | "bluetooth-off" | "wifi-open" | "wifi-on" | "wifi-off" | "settings-open" | "volume-settings-open" | "display-settings-open" | "volume-up" | "volume-down" | "volume-mute" | "volume-unmute" | "volume-max" | "volume-min" | "brightness-up" | "brightness-down" | "brightness-max" | "brightness-min"
   ,
   "userInput": "<original user input>" {only remove your name from userinput if exists} and agar kisi ne google ya youtube pe kuch search karne ko bola hai to userInput me only bo search baala text jaye,
 
@@ -245,6 +423,25 @@ Type meanings:
 - "amazon-search": if user wants to search a product on amazon.
 - "translate-search": if user wants to translate a word or sentence.
 - "maps-search": if user wants maps, directions, or a location search.
+- "bluetooth-open": if user wants to open bluetooth settings on the local system.
+- "bluetooth-on": if user wants to turn bluetooth on on the local system.
+- "bluetooth-off": if user wants to turn bluetooth off on the local system.
+- "wifi-open": if user wants to open wifi settings on the local system.
+- "wifi-on": if user wants to turn wifi on on the local system.
+- "wifi-off": if user wants to turn wifi off on the local system.
+- "settings-open": if user wants to open system settings on the local system.
+- "volume-settings-open": if user wants to open sound or volume settings on the local system.
+- "display-settings-open": if user wants to open brightness or display settings on the local system.
+- "volume-up": if user wants to increase volume on the local system.
+- "volume-down": if user wants to decrease volume on the local system.
+- "volume-mute": if user wants to mute volume on the local system.
+- "volume-unmute": if user wants to unmute volume on the local system.
+- "volume-max": if user wants to set volume to maximum on the local system.
+- "volume-min": if user wants to set volume to minimum on the local system.
+- "brightness-up": if user wants to increase brightness on the local system.
+- "brightness-down": if user wants to decrease brightness on the local system.
+- "brightness-max": if user wants to set brightness to maximum on the local system.
+- "brightness-min": if user wants to set brightness to minimum on the local system.
 - "get-time": if user asks for current time.
 - "get-date": if user asks for today's date.
 - "get-day": if user asks what day it is.
@@ -252,7 +449,6 @@ Type meanings:
 
 Important:
 - Use ${userName} agar koi puche tume kisne banaya 
-- If the user asks to control local PC features like bluetooth, wifi, hotspot, brightness, volume, or system settings, respond with only JSON and keep "response" as either "yes" or "no". If you cannot do it from this app, respond "no".
 - Only respond with the JSON object, nothing else.
 
 
